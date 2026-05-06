@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EasyHide</title>
+	<script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --bg-color: #05010d;
+            --card-bg: #0d061a;
+            --border-color: #2d1b4e;
+            --accent-purple: #a855f7;
+            --accent-blue: #3b82f6;
+            --text-main: #f5f3ff;
+        }
+		
+        body { 
+            background-color: var(--bg-color); 
+            color: var(--text-main); 
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        .gallery-container {
+            background: #000;
+            border: 2px solid var(--border-color);
+            position: relative;
+            width: 100%;
+            max-height: 60vh;
+            aspect-ratio: 16 / 9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 1.5rem;
+            overflow: hidden;
+            box-shadow: 0 0 40px rgba(168, 85, 247, 0.15);
+        }
+
+        .pixel-layer {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: contain;
+            /* Filter dikawal oleh JS Slider */
+            filter: brightness(var(--br, 1)) contrast(var(--ct, 1));
+			transition: none !important;
+        }
+
+        #prevImg { z-index: 10; }
+        #currentImg { z-index: 20; }
+
+        .diff-active #currentImg {
+            mix-blend-mode: difference;
+        }
+
+        /* Arrows */
+        .nav-btn {
+            position: absolute; top: 0; bottom: 0; width: 10%;
+            background: transparent; color: white; 
+            cursor: pointer; transition: 0.3s; border: none; font-size: 32px;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 50; opacity: 0;
+        }
+        .nav-btn:hover { opacity: 1; background: linear-gradient(to right, rgba(168, 85, 247, 0.1), transparent); }
+        .btn-next:hover { background: linear-gradient(to left, rgba(168, 85, 247, 0.1), transparent); }
+        .btn-prev { left: 0; }
+        .btn-next { right: 0; }
+
+        /* Custom Toggle */
+        .toggle-switch {
+            position: relative; width: 44px; height: 22px;
+            background-color: #1a0b2e; border: 1px solid var(--border-color); border-radius: 50px; cursor: pointer;
+        }
+        .toggle-switch::after {
+            content: ''; position: absolute; width: 16px; height: 16px;
+            background-color: var(--accent-purple); border-radius: 50%; top: 2px; left: 2px; transition: 0.2s;
+        }
+        #blendToggle:checked + .toggle-switch { background-color: #2d1b4e; }
+        #blendToggle:checked + .toggle-switch::after { transform: translateX(22px); background-color: #3b82f6; }
+
+        /* Range Slider Styling */
+        input[type=range] {
+            height: 6px; -webkit-appearance: none; width: 100%; background: #1a0b2e; border-radius: 5px; outline: none;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 20px; height: 20px; background: var(--accent-purple); border-radius: 50%; cursor: pointer;
+        }
+
+        input[type="checkbox"]#currentCheckbox {
+            appearance: none; background-color: #1a0b2e; width: 3em; height: 3em;
+            border: 3px solid var(--border-color); border-radius: 12px; display: grid; place-content: center; cursor: pointer;
+        }
+        input[type="checkbox"]#currentCheckbox:checked::before {
+            content: ""; width: 1.8em; height: 1.8em; box-shadow: inset 2em 2em var(--accent-purple);
+            clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+        }
+
+        #modalOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5, 1, 13, 0.9); display: none; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(8px);
+        }
+        .modal-content { background: #0d061a; border: 2px solid var(--border-color); width: 90%; max-width: 800px; border-radius: 2rem; padding: 2rem; }
+		
+		/* Styling the scrollbar for the textarea */
+		#resultArea::-webkit-scrollbar {
+			width: 20px; /* Set the width of the scrollbar */
+		}
+
+		/* The background track */
+		#resultArea::-webkit-scrollbar-track {
+			background: #0d061a; /* Match your modal background */
+			border-radius: 10px;
+		}
+
+		/* The draggable handle (the thumb) */
+		#resultArea::-webkit-scrollbar-thumb {
+			background: #581c87; /* A deep purple (purple-900ish) */
+			border-radius: 10px;
+			border: 2px solid #0d061a; /* Creates a gap effect */
+		}
+
+		/* Hover effect for the thumb */
+		#resultArea::-webkit-scrollbar-thumb:hover {
+			background: #a855f7; /* Brighter purple (purple-500) on hover */
+		}
+		
+		.blob {
+			position: absolute;
+			width: 100vmax; /* Saiz bola - Tukar ni untuk besarkan/kecilkan */
+			height: 100vmax;
+			/* WARNA: Tukar rgba kat bawah ni untuk tukar warna bokeh */
+			background: radial-gradient(circle, rgba(168, 85, 247, 0.15) 0%, transparent 100%);
+			border-radius: 50%;
+			filter: blur(0px); /* TAHAP KABUR: Makin tinggi px, makin lembut bokeh tu */
+			pointer-events: none;
+			transition: transform 15s ease-in-out; /* KELAJUAN: 15s bermaksud dia meluncur perlahan */
+			will-change: transform;
+		}
+
+        /* Warna Purple (Standard EasyHide) */
+		.blob.purple {
+			background: radial-gradient(circle, rgba(168, 85, 247, 0.2) 0%, transparent 70%);
+			width: 60vmax;
+			height: 60vmax;
+		}
+
+		/* Warna Biru (Neon Blue) */
+		.blob.blue {
+			background: radial-gradient(circle, rgba(59, 130, 246, 0.2) 0%, transparent 70%);
+			width: 45vmax; /* Saiz beza sikit supaya nampak depth */
+			height: 45vmax;
+		}
+
+		/* Warna Cyan (Untuk nampak lebih Cyberpunk) */
+		.blob.cyan {
+			background: radial-gradient(circle, rgba(6, 182, 212, 0.15) 0%, transparent 70%);
+			width: 70vmax;
+			height: 70vmax;
+		}
+
+		.bokeh-bg {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100vw;
+			height: 100vh;
+			overflow: hidden; /* Ini yang akan "potong" kalau terkeluar sikit */
+			z-index: -1;
+		}
+		
+		/* Helper Agent Container */
+		.helper-container {
+			position: fixed;
+			bottom: 30px;
+			right: 30px;
+			z-index: 999;
+			display: flex;
+			flex-direction: column;
+			align-items: flex-end;
+			gap: 10px;
+		}
+
+		/* Tooltip Bubble */
+		.helper-tooltip {
+			background: #0d061a;
+			border: 2px solid #2d1b4e;
+			color: #a855f7;
+			padding: 10px 16px;
+			border-radius: 15px;
+			font-size: 12px;
+			font-weight: bold;
+			text-transform: uppercase;
+			letter-spacing: 1px;
+			box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+			pointer-events: none;
+			white-space: normal;      /* Bagi text tu boleh "wrap" ke bawah */
+			max-width: 400px;         /* Lebar maksimum, adjust ikut selesa */
+			width: max-content;       /* Kalau text pendek, dia takkan paksa jadi 250px */
+			line-height: 1.4;         /* Jarak baris supaya selesa baca */
+			text-align: center;       /* Text duduk tengah kalau lebih satu baris */
+			position: relative;
+			transition: all 0.3s ease;
+		}
+
+		/* Anak panah kecik kat tooltip */
+		.helper-tooltip::after {
+			content: '';
+			position: absolute;
+			bottom: -8px;
+			right: 20px;
+			border-left: 8px solid transparent;
+			border-right: 8px solid transparent;
+			border-top: 8px solid #2d1b4e;
+		}
+
+		/* Gambar Avatar */
+		.helper-avatar {
+			width: 70px;
+			height: 70px;
+			border-radius: 50%;
+			border: 3px solid #a855f7;
+			background-image: url('https://cdn.discordapp.com/avatars/217698445186695170/fb81d2ae7710794c2bd52afdabfa5017.png?size=256');
+			background-size: cover;
+			cursor: pointer;
+			box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
+			transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+		}
+
+		.helper-avatar:hover {
+			transform: scale(1.1);
+			box-shadow: 0 0 25px rgba(168, 85, 247, 0.7);
+		}
+
+		.helper-avatar:active {
+			transform: scale(0.9);
+		}
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-10">
+	
+	<div class="bokeh-bg">
+		<div class="blob purple"></div>
+		<div class="blob blue"></div>
+		<div class="blob purple"></div>
+		<div class="blob blue"></div>
+		<div class="blob cyan"></div>
+		<div class="blob purple"></div>
+	</div>
+	
+    <nav class="max-w-6xl mx-auto flex justify-between items-end mb-8">
+        <h1 class="text-4xl font-black uppercase tracking-tighter" style="text-shadow: 0 0 10px rgba(168, 85, 247, 0.8);">EasyHide <span class="text-purple-500 text-2xl">V2.2</span></h1>
+        <div id="selectionStatus" class="hidden bg-purple-600 px-8 py-2 rounded-full text-white font-black text-lg">SELECTED: 0</div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto space-y-5">
+        <div id="pickerArea" class="flex flex-col items-center justify-center border-4 border-dashed border-purple-900/30 p-20 rounded-3xl text-center cursor-pointer hover:border-purple-500 transition bg-purple-950/10">
+            <i id="pickerIcon" data-lucide="folder-search" class="text-purple-500 w-20 h-20 transition-transform hover:scale-110"></i>
+			<p id="pickerText" class="text-3xl font-black uppercase tracking-widest text-purple-300">Open FrameAnalysis Folder</p>
+            <input type="file" id="fileInput" webkitdirectory directory multiple class="hidden">
+        </div>
+
+        <div id="viewer" class="hidden space-y-5">
+            <div class="gallery-container" id="galleryBox">
+                <button class="nav-btn btn-prev" onclick="changeImage(-1)">❮</button>
+                <img id="prevImg" class="pixel-layer">
+                <img id="currentImg" class="pixel-layer">
+                <button class="nav-btn btn-next" onclick="changeImage(1)">❯</button>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+				
+				<div class="bg-[#0d061a] p-5 rounded-3xl border-2 border-[#2d1b4e] space-y-3">
+					<div class="space-y-1">
+						<span id="counterDisplay" class="text-[30px] font-black text-purple-400 uppercase">IMAGE 0 OF 0</span>
+					</div>
+
+					<div class="space-y-1">
+						<div class="font-bold text-[10px] text-purple-400 uppercase tracking-[0.3em]">
+							<span>Blend Mode</span>
+						</div>
+					</div>
+
+					<div class="flex flex-col gap-2">
+						<div class="flex justify-between w-full text-[10px] uppercase tracking-[0.3em] font-bold">
+							<span id="labelNormal" class="text-purple-200/20">Normal</span>
+							<span id="labelDiff" class="text-purple-200/20">Difference</span>
+						</div>
+						
+						<input type="range" id="blendSlider" min="0" max="1" step="1" value="0" oninput="updateView()" class="w-full m-0">
+					</div>
+				</div>
+				
+				<div class="bg-[#0d061a] p-5 rounded-3xl border-2 border-[#2d1b4e] space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-[10px] font-bold text-purple-400 uppercase tracking-[0.3em]">Visual Enhancer</span>
+                        <button onclick="resetFilters()" class="text-[10px] text-purple-400 tracking-[0.3em] hover:text-white uppercase font-bold">Reset Filters</button>
+                    </div>
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-[10px] text-purple-200/40 uppercase tracking-[0.3em]"><span>Brightness</span><span id="brVal">100%</span></div>
+                        <input type="range" id="brSlider" min="0.5" max="2" step="0.1" value="1" oninput="applyFilters()">
+                    </div>
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-[10px] text-purple-200/40 uppercase tracking-[0.3em]"><span>Contrast</span><span id="ctVal">100%</span></div>
+                        <input type="range" id="ctSlider" min="1" max="2" step="0.5" value="1" oninput="applyFilters()">
+                    </div>
+                </div>
+				
+				<div class="bg-[#0d061a] p-5 rounded-3xl border-2 border-[#2d1b4e] flex items-center justify-around gap-4">
+                    <div class="flex flex-col items-center gap-3">
+						<div class="flex items-center gap-4 px-6 py-3 bg-purple-950/20 rounded-2xl border border-purple-800/30">
+							<span class="text-[15px] font-black uppercase text-purple-400">Select?</span>
+							<input type="checkbox" id="currentCheckbox">
+						</div>
+						
+						<button onclick="resetAll()" class="text-[10px] font-bold text-purple-200/40 hover:text-red-500 uppercase tracking-widest transition-colors">
+							Reset Selection
+						</button>
+					</div>
+                </div>
+
+			</div>
+
+            <button id="generateBtn" class="w-full bg-purple-600 py-5 rounded-2xl font-black text-xl uppercase tracking-widest hover:bg-purple-500 transition disabled:opacity-10 shadow-xl" disabled>Generate EasyHide.ini</button>
+        </div>
+    </main>
+
+    <div id="modalOverlay">
+        <div class="modal-content space-y-4">
+            <div class="flex justify-between items-center border-b border-purple-900/50 pb-4">
+                <h3 class="font-black uppercase text-sm tracking-[0.4em] text-purple-500">EasyHide.ini</h3>
+                <div class="flex gap-6">
+                    <button id="copyBtn" class="text-xs font-black text-purple-300 hover:text-white uppercase tracking-widest">Copy Text</button>
+                    <button id="downloadBtn" class="text-xs font-black text-green-400 hover:text-green-300 uppercase tracking-widest">Save .ini</button>
+                    <button onclick="closeModal()" class="text-xs font-black text-red-400 hover:text-red-300 uppercase tracking-widest">Close</button>
+                </div>
+            </div>
+            <textarea id="resultArea" class="w-full h-96 rounded-2xl p-6 font-mono text-sm bg-black border border-purple-900/50 text-purple-300 focus:outline-none resize-none" readonly></textarea>
+        </div>
+    </div>
+	
+	<!-- Alert Modal Container -->
+	<div id="alertModal" class="fixed inset-0 z-[100] flex items-center justify-center hidden">
+		<!-- Backdrop Blur -->
+		<div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+		
+		<!-- Modal Box -->
+		<div class="relative bg-[#0d061a] border border-purple-500/30 p-8 rounded-3xl max-w-sm w-full mx-4 shadow-2xl transform transition-all scale-95 opacity-0" id="modalBox">
+			<div class="flex flex-col items-center text-center">
+				<div class="p-4 rounded-2xl mb-4">
+					<i data-lucide="alert-circle" class="text-red-500 w-20 h-20"></i>
+				</div>
+				<h3 class="text-xl font-bold text-purple-500 mb-2 uppercase tracking-tight">Invalid Folder</h3>
+				<p class="text-purple-300 mb-6">No valid FrameAnalysis files were detected in the selected folder. Please check your files and try again.</p>
+				
+				<button onclick="closeAlert()" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-xl transition-all active:scale-95">
+					UNDERSTOOD
+				</button>
+			</div>
+		</div>
+	</div>
+
+    <script>
+		lucide.createIcons();
+		
+		const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+        let drawCallData = {}; let idList = []; let currentIndex = 0;
+        const fileInput = document.getElementById('fileInput');
+        const galleryBox = document.getElementById('galleryBox');
+        const currentImg = document.getElementById('currentImg');
+        const prevImg = document.getElementById('prevImg');
+        const counterDisplay = document.getElementById('counterDisplay');
+        const currentCheckbox = document.getElementById('currentCheckbox');
+        const selectionStatus = document.getElementById('selectionStatus');
+        const generateBtn = document.getElementById('generateBtn');
+        const resultArea = document.getElementById('resultArea');
+
+        document.getElementById('pickerArea').addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', async (e) => {
+			const pickerText = document.getElementById('pickerText');
+			pickerText.innerText = "Loading...";
+			const iconElement = document.getElementById('pickerIcon');
+			iconElement.setAttribute('data-lucide', 'loader-circle');
+			iconElement.classList.add('animate-spin');
+			lucide.createIcons();
+			
+			await sleep(1000);
+			
+            const files = Array.from(e.target.files);
+            drawCallData = {}; idList = [];
+            const txtFiles = files.filter(f => /^\d+.*-ib=.*-ps=.*\.txt$/i.test(f.name));
+            const txtMap = {};
+            txtFiles.forEach(f => { const id = f.name.match(/^(\d+)/)[1]; txtMap[id] = f; });
+
+            for (let f of files) {
+                const name = f.name.toLowerCase();
+                if (name.endsWith('.jpg') && name.includes('o0') && f.size >= 100 * 1024) {
+                    const idMatch = name.match(/^(\d+)/);
+                    if (idMatch && txtMap[idMatch[1]]) {
+                        const id = idMatch[1];
+                        drawCallData[id] = { txtFile: txtMap[id], imgFile: f, selected: false };
+                        idList.push(id);
+                    }
+                }
+            }
+            idList.sort((a,b) => a.localeCompare(b, undefined, {numeric: true}));
+            if (idList.length > 0) {
+                document.getElementById('viewer').classList.remove('hidden');
+                document.getElementById('pickerArea').classList.add('hidden');
+				document.getElementById('selectionStatus').classList.remove('hidden')
+                showImage(0);
+            }
+			else {
+				const currentIcon = document.getElementById('pickerIcon');
+				currentIcon.classList.remove('animate-spin');
+				pickerText.innerText = "Open FrameAnalysis Folder";
+				currentIcon.setAttribute('data-lucide', 'folder-search');
+				lucide.createIcons();
+				e.target.value = '';
+				showAlert();
+			}
+        });
+
+        function showImage(index) {
+            currentIndex = index;
+            const data = drawCallData[idList[currentIndex]];
+            currentImg.src = URL.createObjectURL(data.imgFile);
+            if (currentIndex > 0) {
+                prevImg.src = URL.createObjectURL(drawCallData[idList[currentIndex-1]].imgFile);
+                prevImg.style.display = 'block';
+            } else {
+                prevImg.style.display = 'none';
+            }
+            counterDisplay.innerText = `IMAGE ${currentIndex + 1} OF ${idList.length}`;
+            currentCheckbox.checked = data.selected;
+            updateGlobalSelectionCount();
+            updateView();
+        }
+
+        <!-- function updateView() { -->
+            <!-- const isDiff = document.getElementById('blendToggle').checked; -->
+            <!-- document.getElementById('modeText').innerText = isDiff ? "Diff" : "Norm"; -->
+            <!-- isDiff ? galleryBox.classList.add('diff-active') : galleryBox.classList.remove('diff-active'); -->
+        <!-- } -->
+		
+		function updateView() {
+			const slider = document.getElementById('blendSlider');
+			const labelNormal = document.getElementById('labelNormal');
+			const labelDiff = document.getElementById('labelDiff');
+			const val = parseInt(slider.value); // 0 atau 1
+			
+			if (val === 1) {
+				// Aktifkan DIFFERENCE
+				labelDiff.classList.replace('text-purple-200/20', 'text-blue-400');
+				labelNormal.classList.replace('text-purple-400', 'text-purple-200/20');
+				galleryBox.classList.add('diff-active');
+			} else {
+				// Aktifkan NORMAL
+				labelNormal.classList.replace('text-purple-200/20', 'text-purple-400');
+				labelDiff.classList.replace('text-blue-400', 'text-purple-200/20');
+				galleryBox.classList.remove('diff-active');
+			}
+		}
+
+        function applyFilters() {
+            const br = document.getElementById('brSlider').value;
+            const ct = document.getElementById('ctSlider').value;
+            document.getElementById('brVal').innerText = Math.round(br * 100) + "%";
+            document.getElementById('ctVal').innerText = Math.round(ct * 100) + "%";
+            document.documentElement.style.setProperty('--br', br);
+            document.documentElement.style.setProperty('--ct', ct);
+        }
+
+        function resetFilters() {
+            document.getElementById('brSlider').value = 1;
+            document.getElementById('ctSlider').value = 1;
+            applyFilters();
+        }
+
+        function changeImage(step) { let ni = currentIndex + step; if (ni >= 0 && ni < idList.length) showImage(ni); }
+        function resetAll() { if (!confirm("Clear selections?")) return; Object.keys(drawCallData).forEach(id => drawCallData[id].selected = false); updateGlobalSelectionCount(); currentCheckbox.checked = false; }
+        function closeModal() { document.getElementById('modalOverlay').style.display = 'none'; }
+
+        currentCheckbox.addEventListener('change', (e) => { drawCallData[idList[currentIndex]].selected = e.target.checked; updateGlobalSelectionCount(); });
+        
+		window.addEventListener('keydown', (e) => {
+			// Tukar gambar ke belakang (Left atau A)
+			if (e.key === "ArrowLeft" || e.key.toLowerCase() === "a") {
+				e.preventDefault(); 
+				changeImage(-1);
+			}
+			
+			// Tukar gambar ke depan (Right atau D)
+			if (e.key === "ArrowRight" || e.key.toLowerCase() === "d") {
+				e.preventDefault(); 
+				changeImage(1);
+			}
+			
+			// Spacebar untuk tick/untick checkbox
+			if (e.key === " ") { 
+				e.preventDefault(); 
+				currentCheckbox.click(); 
+			}
+		});
+
+        function updateGlobalSelectionCount() {
+            const count = Object.values(drawCallData).filter(d => d.selected).length;
+            selectionStatus.innerText = `SELECTED: ${count}`;
+            generateBtn.disabled = count === 0;
+        }
+
+        generateBtn.addEventListener('click', async () => {
+            const selectedIds = idList.filter(id => drawCallData[id].selected);
+            const scriptMap = {};
+            for (let id of selectedIds) {
+                const data = drawCallData[id];
+                const content = await data.txtFile.text();
+                const hash = (data.txtFile.name.match(/-ps=([a-f0-9]+)/i) || [])[1];
+                const ic = (content.match(/index\s*count\s*:\s*(\d+)/i) || [])[1];
+                const fi = (content.match(/first\s*index\s*:\s*(\d+)/i) || [])[1];
+                if (hash && ic && fi) {
+                    if (!scriptMap[hash]) scriptMap[hash] = new Set();
+                    scriptMap[hash].add(`${ic}-${fi}`);
+                }
+            }
+            let script = `[Constants]\nglobal $WallpaperMode = 0\n\n[KeyToggle]\nKey = F4\ntype = cycle\n$WallpaperMode = 0, 1\n\n`;
+            Object.keys(scriptMap).forEach((hash, i) => {
+                script += `[ShaderOverride_${i+1}]\nhash = ${hash}\nif $WallpaperMode\n`;
+                scriptMap[hash].forEach(v => {
+                    const [ic, fi] = v.split('-');
+                    script += `    if index_count == ${ic} && first_index == ${fi}\n        handling = skip\n    endif\n`;
+                });
+                script += `endif\n\n`;
+            });
+            resultArea.value = script.trim();
+            document.getElementById('modalOverlay').style.display = 'flex';
+        });
+
+        document.getElementById('copyBtn').addEventListener('click', () => {
+            resultArea.select(); document.execCommand('copy');
+            copyBtn.innerText = "COPIED!"; setTimeout(() => copyBtn.innerText = "Copy Text", 2000);
+        });
+
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            const blob = new Blob([resultArea.value], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = 'EasyHide.ini'; a.click();
+        });
+		
+		function showAlert() {
+			const modal = document.getElementById('alertModal');
+			const box = document.getElementById('modalBox');
+			
+			modal.classList.remove('hidden');
+			// Beri delay sikit untuk animation transition
+			setTimeout(() => {
+				box.classList.remove('scale-95', 'opacity-0');
+				box.classList.add('scale-100', 'opacity-100');
+			}, 10);
+			lucide.createIcons();
+		}
+
+		function closeAlert() {
+			const modal = document.getElementById('alertModal');
+			const box = document.getElementById('modalBox');
+			
+			box.classList.remove('scale-100', 'opacity-100');
+			box.classList.add('scale-95', 'opacity-0');
+			
+			setTimeout(() => {
+				modal.classList.add('hidden');
+			}, 200);
+		}
+		
+		function moveBlobs() {
+			const blobs = document.querySelectorAll('.blob');
+			
+			blobs.forEach(blob => {
+				// Kira saiz viewport supaya tak lari keluar jauh sangat
+				const maxX = window.innerWidth * 0.8; 
+				const maxY = window.innerHeight * 0.8;
+				
+				// Jana koordinat rawak
+				const randomX = Math.random() * maxX;
+				const randomY = Math.random() * maxY;
+				
+				// Jana durasi rawak supaya setiap satu gerak speed beza
+				const randomDuration = 15 + Math.random() * 10; // Antara 15s - 25s
+				
+				blob.style.transitionDuration = `${randomDuration}s`;
+				blob.style.transform = `translate(${randomX}px, ${randomY}px)`;
+			});
+		}
+
+		// Jalankan sekali bila page load
+		window.addEventListener('DOMContentLoaded', () => {
+			// 1. Set kedudukan awal secara random tanpa delay
+			const blobs = document.querySelectorAll('.blob');
+			blobs.forEach(blob => {
+				blob.style.transition = 'none'; // Matikan transition jap supaya dia tak meluncur masa baru buka
+				
+				const startX = Math.random() * window.innerWidth * 0.8;
+				const startY = Math.random() * window.innerHeight * 0.8;
+				blob.style.transform = `translate(${startX}px, ${startY}px)`;
+				
+				// Paksa browser apply kedudukan tu sebelum pasang balik transition
+				blob.offsetHeight; 
+				blob.style.transition = 'transform 15s ease-in-out';
+			});
+
+			// 2. Jalankan pergerakan seterusnya
+			setTimeout(moveBlobs, 100); 
+			setInterval(moveBlobs, 15000); 
+		});
+		
+		// Set Text untuk Fasa Berbeza
+		const tipsPickerVisible = [
+			"FrameAnalysis is located\ninside the XXMI Launcher folder",
+			"The folder looks like this:\nFrameAnalysis-2026-04-28-163142",
+			"(￣^￣)ゞ"
+		];
+
+		const tipsViewerVisible = [
+			"Use A/D keys to navigate images",
+			"Press Space to toggle selection!",
+			"Press F5 to start over",
+			"Change the blend mode to different\nif you prefer",
+			"Use the visual Enhancer if\nsome of the UI is hard to see",
+			"(￣^￣)ゞ"
+		];
+
+		let helperIndex = 0;
+		let idleTimeout;
+		let autoCycleInterval;
+
+		// Function untuk tahu Lumi kena guna list mana
+		function getCurrentTips() {
+			const pickerArea = document.getElementById('pickerArea');
+			// Kalau pickerArea tak ada class 'hidden', maksudnya dia tengah visible
+			return pickerArea.classList.contains('hidden') ? tipsViewerVisible : tipsPickerVisible;
+		}
+
+		function startAutoCycle() {
+			clearInterval(autoCycleInterval);
+			autoCycleInterval = setInterval(() => {
+				showNextTip();
+			}, 5000); 
+		}
+
+		function showNextTip() {
+			const tooltip = document.getElementById('helperTooltip');
+			const currentTips = getCurrentTips();
+			
+			// Elakkan index out of bounds kalau saiz array beza
+			helperIndex = (helperIndex + 1) % currentTips.length;
+
+			tooltip.style.opacity = '0';
+			tooltip.style.transform = 'translateY(5px)';
+			
+			setTimeout(() => {
+				tooltip.innerText = currentTips[helperIndex];
+				tooltip.style.opacity = '1';
+				tooltip.style.transform = 'translateY(0)';
+			}, 200);
+		}
+
+		function cycleHelperText() {
+			showNextTip();
+			clearInterval(autoCycleInterval);
+			clearTimeout(idleTimeout);
+
+			idleTimeout = setTimeout(() => {
+				startAutoCycle();
+			}, 10000);
+		}
+
+		window.addEventListener('DOMContentLoaded', () => {
+			// Start dengan tip pertama dari list picker
+			document.getElementById('helperTooltip').innerText = tipsPickerVisible[0];
+			startAutoCycle();
+		});
+    </script>
+	
+	<div class="helper-container">
+		<div id="helperTooltip" class="helper-tooltip">Need Help?</div>
+		<div class="helper-avatar" onclick="cycleHelperText()"></div>
+	</div>
+</body>
+</html>
