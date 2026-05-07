@@ -81,13 +81,19 @@
 				<div class="bg-[#0d061a] p-5 rounded-3xl border-2 border-[#2d1b4e] flex items-center justify-around gap-4">
                     <div class="flex flex-col items-center gap-3">
 						<div class="flex items-center gap-4 px-6 py-3 bg-purple-950/20 rounded-2xl border border-purple-800/30">
-							<span class="text-[15px] font-black uppercase text-purple-400">Select?</span>
+							<span class="text-[15px] font-black uppercase text-purple-400">Hide this?</span>
 							<input type="checkbox" id="currentCheckbox">
 						</div>
 						
-						<button onclick="resetAll()" class="text-[10px] font-bold text-purple-200/40 hover:text-red-500 uppercase tracking-widest transition-colors">
-							Reset Selection
-						</button>
+						<div class="flex gap-4 items-center">
+							<button onclick="invertSelection()" class="text-[10px] font-bold text-purple-200/40 hover:text-purple-400 uppercase tracking-widest transition-colors">
+								Invert
+							</button>
+
+							<button onclick="resetAll()" class="text-[10px] font-bold text-purple-200/40 hover:text-red-500 uppercase tracking-widest transition-colors">
+								Reset
+							</button>
+						</div>
 					</div>
                 </div>
 
@@ -111,12 +117,9 @@
         </div>
     </div>
 	
-	<!-- Alert Modal Container -->
 	<div id="alertModal" class="fixed inset-0 z-[100] flex items-center justify-center hidden">
-		<!-- Backdrop Blur -->
 		<div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
 		
-		<!-- Modal Box -->
 		<div class="relative bg-[#0d061a] border border-purple-500/30 p-8 rounded-3xl max-w-sm w-full mx-4 shadow-2xl transform transition-all scale-95 opacity-0" id="modalBox">
 			<div class="flex flex-col items-center text-center">
 				<div class="p-4 rounded-2xl mb-4">
