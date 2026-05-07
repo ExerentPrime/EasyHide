@@ -230,3 +230,8 @@ input[type="checkbox"]#currentCheckbox:checked::before {
 .helper-avatar:active {
 	transform: scale(0.9);
 }
+
+button:focus {
+    outline: none;
+    box-shadow: none; /* Kadang-kadang browser tambah shadow pun ada */
+}
