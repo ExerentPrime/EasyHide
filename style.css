@@ -16,7 +16,8 @@ body {
 }
 
 .gallery-container {
-	background: #000;
+	/* background: #000; */
+	background: transparent;
 	border: 2px solid var(--border-color);
 	position: relative;
 	width: 100%;
@@ -209,17 +210,66 @@ input[type="checkbox"]#currentCheckbox:checked::before {
 	border-top: 8px solid #2d1b4e;
 }
 
-/* Gambar Avatar */
+/* Gambar Avatar dengan RGB Border */
 .helper-avatar {
 	width: 70px;
 	height: 70px;
 	border-radius: 50%;
-	border: 3px solid #a855f7;
-	background-image: url('https://cdn.discordapp.com/avatars/217698445186695170/fb81d2ae7710794c2bd52afdabfa5017.png?size=256');
-	background-size: cover;
+	position: relative; /* Wajib untuk layer RGB */
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	overflow: hidden; /* Potong gradient jadi bulat */
 	cursor: pointer;
 	box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
 	transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+	border: none; /* Kita buang border asal sebab guna layer RGB */
+	flex-shrink: 0; 
+	margin-right: 0;
+}
+
+/* Layer Lampu RGB yang berpusing */
+.helper-avatar::before {
+	content: '';
+	position: absolute;
+	width: 180%;
+	height: 180%;
+	background: conic-gradient(
+		#a855f7, /* Purple */
+		#06b6d4, /* Cyan */
+		#22c55e, /* Green */
+		#a855f7  /* Balik ke Purple untuk sambungan smooth */
+	);
+	animation: rotateRGB 3s linear infinite;
+	z-index: 1;
+}
+
+/* Layer Gambar Avatar (Tutup tengah gradient) */
+.helper-avatar::after {
+	content: '';
+	position: absolute;
+	/* Ketebalan border: beza antara 'inset' dengan saiz container */
+	inset: 3px; 
+	border-radius: 50%;
+	background-image: url('https://cdn.discordapp.com/avatars/217698445186695170/fb81d2ae7710794c2bd52afdabfa5017.png?size=256');
+	background-size: cover;
+	background-color: #0d061a; /* Background fallback */
+	z-index: 2;
+}
+
+/* Animation Pusing */
+@keyframes rotateRGB {
+	from { transform: rotate(0deg); }
+	to { transform: rotate(360deg); }
+}
+
+.helper-avatar:hover {
+	transform: scale(1.1);
+	box-shadow: 0 0 25px rgba(168, 85, 247, 0.7);
+}
+
+.helper-avatar:active {
+	transform: scale(0.9);
 }
 
 .helper-avatar:hover {
