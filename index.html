@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EasyHide</title>
+    <title>EZ0UI - Script Generator</title>
 	<script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css">
@@ -21,7 +21,11 @@
 	</div>
 	
     <nav class="max-w-6xl mx-auto flex justify-between items-end mb-8">
-        <h1 class="text-4xl font-black uppercase tracking-tighter" style="text-shadow: 0 0 10px rgba(168, 85, 247, 0.8);">EasyHide <span class="text-purple-500 text-2xl">V2.2</span></h1>
+        <div class="flex items-end gap-3">
+			<img src="EZ0UI.svg" alt="EZ0UI" class="h-12 w-auto filter drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]">
+			
+			<span class="text-purple-500 text-2xl font-black tracking-tighter mb-1">V2.4</span>
+		</div>
         <div id="selectionStatus" class="hidden bg-purple-600 px-8 py-2 rounded-full text-white font-black text-lg">SELECTED: 0</div>
     </nav>
 
@@ -99,14 +103,14 @@
 
 			</div>
 
-            <button id="generateBtn" class="w-full bg-purple-600 py-5 rounded-2xl font-black text-xl uppercase tracking-widest hover:bg-purple-500 transition disabled:opacity-10 shadow-xl" disabled>Generate EasyHide.ini</button>
+            <button id="generateBtn" class="w-full bg-purple-600 py-5 rounded-2xl font-black text-xl uppercase tracking-widest hover:bg-purple-500 transition disabled:opacity-10 shadow-xl" disabled>Generate EZ0UI.ini</button>
         </div>
     </main>
 
     <div id="modalOverlay">
         <div class="modal-content space-y-4">
             <div class="flex justify-between items-center border-b border-purple-900/50 pb-4">
-                <h3 class="font-black uppercase text-sm tracking-[0.4em] text-purple-500">EasyHide.ini</h3>
+                <h3 class="font-black uppercase text-sm tracking-[0.4em] text-purple-500">EZ0UI.ini</h3>
                 <div class="flex gap-6">
                     <button id="copyBtn" class="text-xs font-black text-purple-300 hover:text-white uppercase tracking-widest">Copy Text</button>
                     <button id="downloadBtn" class="text-xs font-black text-green-400 hover:text-green-300 uppercase tracking-widest">Save .ini</button>
