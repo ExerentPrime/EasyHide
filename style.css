@@ -1,287 +1,516 @@
 :root {
-	--bg-color: #05010d;
-	--card-bg: #0d061a;
-	--border-color: #2d1b4e;
-	--accent-purple: #a855f7;
-	--accent-blue: #3b82f6;
-	--text-main: #f5f3ff;
+    --bg: #05010d;
+    --surface: rgba(255,255,255,0.025);
+    --surface-hover: rgba(168,85,247,0.07);
+    --border: rgba(168,85,247,0.12);
+    --border-hover: rgba(168,85,247,0.35);
+    --purple: #a855f7;
+    --purple-dim: rgba(168,85,247,0.45);
+    --green: #34d399;
+    --green-dim: rgba(52,211,153,0.4);
+    --red: #f87171;
+    --red-dim: rgba(248,113,113,0.4);
+    --text: #e2d9f3;
+    --text-muted: rgba(226,217,243,0.3);
+    --text-mid: rgba(226,217,243,0.55);
+    --br: 1;
+    --ct: 1;
 }
 
-body { 
-	background-color: var(--bg-color); 
-	color: var(--text-main); 
-	font-family: 'Inter', sans-serif;
-	overflow-x: hidden;
-	position: relative;
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    overflow-x: hidden;
 }
 
+/* ── Bokeh ── */
+.bokeh-bg {
+    position: fixed; inset: 0;
+    overflow: hidden; z-index: -1; pointer-events: none;
+}
+.blob {
+    position: absolute; border-radius: 50%;
+    pointer-events: none;
+    transition: transform 15s ease-in-out;
+    will-change: transform;
+}
+.blob.purple { width: 55vmax; height: 55vmax; background: radial-gradient(circle, rgba(168,85,247,0.16) 0%, transparent 70%); }
+.blob.blue    { width: 40vmax; height: 40vmax; background: radial-gradient(circle, rgba(59,130,246,0.13) 0%, transparent 70%); }
+.blob.cyan    { width: 65vmax; height: 65vmax; background: radial-gradient(circle, rgba(6,182,212,0.09) 0%, transparent 70%); }
+
+/* ── Nav ── */
+.topnav {
+    max-width: 1344px; margin: 0 auto;
+    padding: 34px 24px 0;
+    display: flex; justify-content: space-between; align-items: center;
+}
+.nav-brand { display: flex; align-items: center; gap: 12px; }
+.logo-glow { filter: drop-shadow(0 0 8px rgba(168,85,247,0.55)); height: 44px; width: auto; }
+.version-badge {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.18em;
+    color: var(--purple-dim);
+    background: rgba(168,85,247,0.07);
+    border: 1px solid var(--border);
+    padding: 4px 12px; border-radius: 20px;
+}
+.selection-pill {
+    display: flex; align-items: center; gap: 7px;
+    background: rgba(168,85,247,0.1);
+    border: 1px solid rgba(168,85,247,0.28);
+    color: var(--purple);
+    font-size: 13px; font-weight: 600; letter-spacing: 0.08em;
+    padding: 6px 16px; border-radius: 20px;
+}
+.sel-pill-label { color: var(--purple-dim); font-weight: 400; }
+
+/* ── Layout ── */
+.main-wrap {
+    max-width: 1344px; margin: 0 auto;
+    padding: 22px 24px 56px;
+}
+
+/* ── Picker ── */
+.picker-zone {
+    border: 1px dashed rgba(168,85,247,0.18);
+    border-radius: 24px; padding: 120px 56px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: border-color 0.3s, background 0.3s;
+    margin-top: 20px;
+}
+.picker-zone:hover {
+    border-color: rgba(168,85,247,0.45);
+    background: rgba(168,85,247,0.03);
+}
+.picker-inner { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+.picker-icon-wrap {
+    width: 88px; height: 88px; border-radius: 22px;
+    background: rgba(168,85,247,0.07);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.3s;
+}
+.picker-icon-wrap svg { width: 40px !important; height: 40px !important; }
+.picker-zone:hover .picker-icon-wrap {
+    background: rgba(168,85,247,0.13);
+    border-color: var(--purple-dim);
+}
+.picker-label {
+    font-size: 17px; font-weight: 600; letter-spacing: 0.06em;
+    color: var(--text); text-transform: uppercase;
+}
+.picker-sub { font-size: 13px; color: var(--text-muted); letter-spacing: 0.02em; }
+
+/* ── Viewer ── */
+.viewer-layout { display: flex; flex-direction: column; gap: 14px; margin-top: 20px; }
+
+/* ── Gallery ── */
 .gallery-container {
-	/* background: #000; */
-	background: transparent;
-	border: 2px solid var(--border-color);
-	position: relative;
-	width: 100%;
-	max-height: 60vh;
-	aspect-ratio: 16 / 9;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	border-radius: 1.5rem;
-	overflow: hidden;
-	box-shadow: 0 0 40px rgba(168, 85, 247, 0.15);
+    position: relative; width: 100%;
+    aspect-ratio: 16/9; max-height: 65vh;
+    border: 1px solid var(--border);
+    border-radius: 20px; overflow: hidden;
+    background: #000;
 }
-
 .pixel-layer {
-	image-rendering: pixelated;
-	image-rendering: crisp-edges;
-	position: absolute;
-	top: 0; left: 0;
-	width: 100%; height: 100%;
-	object-fit: contain;
-	/* Filter dikawal oleh JS Slider */
-	filter: brightness(var(--br, 1)) contrast(var(--ct, 1));
-	transition: none !important;
+    image-rendering: pixelated; image-rendering: crisp-edges;
+    position: absolute; inset: 0;
+    width: 100%; height: 100%; object-fit: contain;
+    filter: brightness(var(--br,1)) contrast(var(--ct,1));
+    transition: none !important;
 }
-
 #prevImg { z-index: 10; }
 #currentImg { z-index: 20; }
+.diff-active #currentImg { mix-blend-mode: difference; }
 
-.diff-active #currentImg {
-	mix-blend-mode: difference;
-}
-
-/* Arrows */
 .nav-btn {
-	position: absolute; top: 0; bottom: 0; width: 10%;
-	background: transparent; color: white; 
-	cursor: pointer; transition: 0.3s; border: none; font-size: 32px;
-	display: flex; align-items: center; justify-content: center;
-	z-index: 50; opacity: 0;
+    position: absolute; top: 0; bottom: 0; width: 11%;
+    background: transparent; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.25); opacity: 0; z-index: 50;
+    transition: opacity 0.2s, background 0.2s;
 }
-.nav-btn:hover { opacity: 1; background: linear-gradient(to right, rgba(168, 85, 247, 0.1), transparent); }
-.btn-next:hover { background: linear-gradient(to left, rgba(168, 85, 247, 0.1), transparent); }
+.nav-btn:hover { opacity: 1; color: #fff; }
 .btn-prev { left: 0; }
+.btn-prev:hover { background: linear-gradient(to right, rgba(168,85,247,0.1), transparent); }
 .btn-next { right: 0; }
+.btn-next:hover { background: linear-gradient(to left, rgba(168,85,247,0.1), transparent); }
 
-/* Custom Toggle */
-.toggle-switch {
-	position: relative; width: 44px; height: 22px;
-	background-color: #1a0b2e; border: 1px solid var(--border-color); border-radius: 50px; cursor: pointer;
-}
-.toggle-switch::after {
-	content: ''; position: absolute; width: 16px; height: 16px;
-	background-color: var(--accent-purple); border-radius: 50%; top: 2px; left: 2px; transition: 0.2s;
-}
-#blendToggle:checked + .toggle-switch { background-color: #2d1b4e; }
-#blendToggle:checked + .toggle-switch::after { transform: translateX(22px); background-color: #3b82f6; }
-
-/* Range Slider Styling */
-input[type=range] {
-	height: 6px; -webkit-appearance: none; width: 100%; background: #1a0b2e; border-radius: 5px; outline: none;
-}
-input[type=range]::-webkit-slider-thumb {
-	-webkit-appearance: none; width: 20px; height: 20px; background: var(--accent-purple); border-radius: 50%; cursor: pointer;
+/* ── Controls Row ── */
+.controls-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+    gap: 12px;
+    align-items: start;
 }
 
-input[type="checkbox"]#currentCheckbox {
-	appearance: none; background-color: #1a0b2e; width: 3em; height: 3em;
-	border: 3px solid var(--border-color); border-radius: 12px; display: grid; place-content: center; cursor: pointer;
+/* Responsive: 2 columns on medium, 1 on small */
+@media (max-width: 860px) {
+    .controls-row {
+        grid-template-columns: 1fr 1fr;
+    }
 }
-input[type="checkbox"]#currentCheckbox:checked::before {
-	content: ""; width: 1.8em; height: 1.8em; box-shadow: inset 2em 2em var(--accent-purple);
-	clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+@media (max-width: 480px) {
+    .controls-row {
+        grid-template-columns: 1fr;
+    }
+    .main-wrap { padding: 14px 12px 40px; }
+    .topnav { padding: 18px 12px 0; }
 }
 
+/* ── Card Base ── */
+.ctrl-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: visible; /* allow overlay to escape */
+    transition: border-color 0.25s, background 0.25s;
+    position: relative;
+}
+.ctrl-card:not(.counter-card):hover {
+    border-color: var(--border-hover);
+    background: var(--surface-hover);
+}
+
+/* ── Collapsed State ── */
+.card-collapsed {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 7px; padding: 20px 12px;
+    min-height: 94px;
+    position: relative; z-index: 1;
+}
+
+.card-icon {
+    width: 22px; height: 22px;
+    color: var(--text-muted);
+    transition: color 0.2s;
+    flex-shrink: 0;
+}
+.ctrl-card:hover .card-icon { color: var(--purple); }
+
+.card-value {
+    font-size: 12px; font-weight: 500; letter-spacing: 0.06em;
+    color: var(--text-mid);
+    text-align: center;
+    line-height: 1;
+}
+.mono { font-family: 'DM Mono', monospace; }
+
+/* ── Expanded State — OVERLAY (floats above, no layout shift) ── */
+.card-expanded {
+    position: absolute;
+    bottom: calc(100% + 8px); /* appear above the card */
+    left: 0; right: 0;
+    background: rgba(10,4,22,0.97);
+    border: 1px solid var(--border-hover);
+    border-radius: 14px;
+    padding: 0;
+    z-index: 200;
+    backdrop-filter: blur(16px);
+    /* hidden by default */
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(6px);
+    transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.4,0,0.2,1);
+    /* inner padding applied when visible */
+}
+.expandable:hover .card-expanded {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+}
+/* keep hover zone alive between card and popup */
+.expandable::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 0; right: 0;
+    height: 16px; /* bridge gap */
+    z-index: 199;
+}
+
+.exp-title {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--text-muted);
+}
+.exp-header-row {
+    display: flex; justify-content: space-between; align-items: center;
+}
+
+/* ── Blend Toggle Buttons ── */
+.blend-toggle-row {
+    display: flex; gap: 7px;
+}
+.blend-toggle-btn {
+    flex: 1; padding: 8px 6px;
+    border-radius: 9px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    cursor: pointer; transition: all 0.2s;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: var(--text-muted);
+}
+.blend-toggle-btn:hover {
+    border-color: var(--border-hover);
+    color: var(--text);
+}
+.blend-toggle-btn.active {
+    background: rgba(168,85,247,0.18);
+    border-color: var(--purple);
+    color: var(--purple);
+    box-shadow: 0 0 12px rgba(168,85,247,0.2);
+}
+
+/* ── Sliders ── */
+.ctrl-slider {
+    width: 100%; -webkit-appearance: none;
+    height: 4px; border-radius: 4px;
+    background: rgba(168,85,247,0.15); outline: none; cursor: pointer;
+}
+.ctrl-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px;
+    background: var(--purple); border-radius: 50%;
+    box-shadow: 0 0 6px rgba(168,85,247,0.6);
+    cursor: pointer;
+}
+
+/* ── Reset ── */
+.mini-reset {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--text-muted);
+    background: none; border: none; cursor: pointer;
+    padding: 2px 7px; border-radius: 5px;
+    transition: color 0.2s, background 0.2s;
+}
+.mini-reset:hover { color: var(--purple); background: rgba(168,85,247,0.1); }
+
+/* ── Eye Card ── */
+.eye-card .card-collapsed { cursor: pointer; }
+.eye-icon-wrap {
+    width: 38px; height: 38px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(52,211,153,0.1);
+    border: 1px solid rgba(52,211,153,0.25);
+    transition: all 0.25s;
+}
+.eye-icon-wrap .card-icon { color: var(--green); }
+.eye-card:hover .card-icon { color: var(--green); }
+
+.eye-card.is-hidden .eye-icon-wrap {
+    background: rgba(248,113,113,0.1);
+    border-color: rgba(248,113,113,0.3);
+}
+.eye-card.is-hidden .eye-icon-wrap .card-icon { color: var(--red); }
+.eye-card.is-hidden .eye-status { color: var(--red); }
+.eye-card.is-hidden { border-color: rgba(248,113,113,0.2); }
+.eye-card.is-hidden:hover { border-color: var(--red-dim); background: rgba(248,113,113,0.04); }
+.eye-status { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; color: var(--green); transition: color 0.2s; }
+
+.eye-expanded { gap: 9px; }
+.eye-toggle-row { display: flex; }
+.eye-toggle-btn {
+    display: flex; align-items: center; gap: 8px;
+    width: 100%; padding: 10px 14px; border-radius: 10px;
+    background: rgba(52,211,153,0.08);
+    border: 1px solid rgba(52,211,153,0.2);
+    color: var(--green);
+    font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; cursor: pointer;
+    transition: all 0.2s;
+}
+.eye-toggle-btn:hover { background: rgba(52,211,153,0.15); }
+.eye-toggle-btn.hidden-active {
+    background: rgba(248,113,113,0.08);
+    border-color: rgba(248,113,113,0.2);
+    color: var(--red);
+}
+.eye-toggle-btn.hidden-active:hover { background: rgba(248,113,113,0.15); }
+
+.eye-actions {
+    display: flex; gap: 7px;
+}
+.eye-action-btn {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--text-muted); background: none;
+    border: 1px solid rgba(255,255,255,0.07);
+    padding: 7px 10px; border-radius: 8px; cursor: pointer;
+    transition: all 0.2s; flex: 1; justify-content: center;
+}
+.eye-action-btn:hover { color: var(--purple); border-color: rgba(168,85,247,0.3); background: rgba(168,85,247,0.07); }
+.danger-btn:hover { color: var(--red); border-color: var(--red-dim); background: rgba(248,113,113,0.07); }
+
+/* ── Generate ── */
+.generate-btn {
+    width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;
+    padding: 20px; border-radius: 16px;
+    background: rgba(168,85,247,0.1);
+    border: 1px solid rgba(168,85,247,0.25);
+    color: var(--purple);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    cursor: pointer; transition: all 0.25s;
+}
+.generate-btn:hover:not(:disabled) {
+    background: rgba(168,85,247,0.2);
+    border-color: var(--purple);
+    box-shadow: 0 0 28px rgba(168,85,247,0.2);
+}
+.generate-btn:disabled { opacity: 0.15; cursor: not-allowed; }
+
+/* ── Result Modal ── */
 #modalOverlay {
-	position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-	background: rgba(5, 1, 13, 0.9); display: none; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(8px);
+    position: fixed; inset: 0;
+    background: rgba(5,1,13,0.88);
+    display: none; align-items: center; justify-content: center;
+    z-index: 300; backdrop-filter: blur(14px);
 }
-.modal-content { background: #0d061a; border: 2px solid var(--border-color); width: 90%; max-width: 800px; border-radius: 2rem; padding: 2rem; }
-
-/* Styling the scrollbar for the textarea */
-#resultArea::-webkit-scrollbar {
-	width: 20px; /* Set the width of the scrollbar */
+.result-modal {
+    background: rgba(12,6,24,0.97);
+    border: 1px solid var(--border-hover);
+    border-radius: 24px; padding: 26px;
+    width: 90%; max-width: 900px;
+    display: flex; flex-direction: column; gap: 18px;
 }
-
-/* The background track */
-#resultArea::-webkit-scrollbar-track {
-	background: #0d061a; /* Match your modal background */
-	border-radius: 10px;
+.modal-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(168,85,247,0.1);
 }
-
-/* The draggable handle (the thumb) */
-#resultArea::-webkit-scrollbar-thumb {
-	background: #581c87; /* A deep purple (purple-900ish) */
-	border-radius: 10px;
-	border: 2px solid #0d061a; /* Creates a gap effect */
+.modal-title {
+    display: flex; align-items: center; gap: 9px;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--purple);
 }
-
-/* Hover effect for the thumb */
-#resultArea::-webkit-scrollbar-thumb:hover {
-	background: #a855f7; /* Brighter purple (purple-500) on hover */
+.modal-actions { display: flex; align-items: center; gap: 8px; }
+.modal-btn {
+    display: flex; align-items: center; gap: 7px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: var(--text-muted); border-radius: 9px;
+    padding: 7px 14px; cursor: pointer; transition: all 0.2s;
 }
+.modal-btn:hover { border-color: var(--border-hover); color: var(--text); }
+.success-btn:hover { border-color: var(--green-dim); color: var(--green); }
+.danger-modal-btn:hover { border-color: var(--red-dim); color: var(--red); }
 
-.blob {
-	position: absolute;
-	width: 100vmax; /* Saiz bola - Tukar ni untuk besarkan/kecilkan */
-	height: 100vmax;
-	/* WARNA: Tukar rgba kat bawah ni untuk tukar warna bokeh */
-	background: radial-gradient(circle, rgba(168, 85, 247, 0.15) 0%, transparent 100%);
-	border-radius: 50%;
-	filter: blur(0px); /* TAHAP KABUR: Makin tinggi px, makin lembut bokeh tu */
-	pointer-events: none;
-	transition: transform 15s ease-in-out; /* KELAJUAN: 15s bermaksud dia meluncur perlahan */
-	will-change: transform;
+#resultArea {
+    width: 100%; height: 440px;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(168,85,247,0.1);
+    border-radius: 14px; padding: 20px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px; line-height: 1.7;
+    color: rgba(168,85,247,0.75);
+    resize: none; outline: none;
 }
+#resultArea::-webkit-scrollbar { width: 5px; }
+#resultArea::-webkit-scrollbar-track { background: transparent; }
+#resultArea::-webkit-scrollbar-thumb { background: rgba(168,85,247,0.25); border-radius: 4px; }
+#resultArea::-webkit-scrollbar-thumb:hover { background: var(--purple); }
 
-/* Warna Purple (Standard EasyHide) */
-.blob.purple {
-	background: radial-gradient(circle, rgba(168, 85, 247, 0.2) 0%, transparent 70%);
-	width: 60vmax;
-	height: 60vmax;
+/* ── Alert ── */
+.alert-box {
+    position: relative; z-index: 10;
+    background: rgba(12,6,24,0.98);
+    border: 1px solid rgba(248,113,113,0.18);
+    padding: 44px 36px; border-radius: 24px;
+    max-width: 380px; width: 90%; text-align: center;
 }
-
-/* Warna Biru (Neon Blue) */
-.blob.blue {
-	background: radial-gradient(circle, rgba(59, 130, 246, 0.2) 0%, transparent 70%);
-	width: 45vmax; /* Saiz beza sikit supaya nampak depth */
-	height: 45vmax;
+.alert-title { font-size: 17px; font-weight: 700; color: var(--red); margin-bottom: 12px; }
+.alert-body  { font-size: 14px; color: var(--text-muted); line-height: 1.6; margin-bottom: 28px; }
+.alert-btn {
+    width: 100%; padding: 13px;
+    background: rgba(248,113,113,0.08);
+    border: 1px solid rgba(248,113,113,0.25);
+    border-radius: 12px; color: var(--red);
+    font-weight: 700; font-size: 12px;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    cursor: pointer; transition: all 0.2s;
 }
+.alert-btn:hover { background: rgba(248,113,153,0.16); }
 
-/* Warna Cyan (Untuk nampak lebih Cyberpunk) */
-.blob.cyan {
-	background: radial-gradient(circle, rgba(6, 182, 212, 0.15) 0%, transparent 70%);
-	width: 70vmax;
-	height: 70vmax;
+/* ── Music Pill ── */
+.icon-pill {
+    display: flex; align-items: center; gap: 0;
+    background: rgba(12,6,24,0.85);
+    border: 1px solid var(--border);
+    border-radius: 40px; overflow: hidden;
+    transition: all 0.35s ease;
+    backdrop-filter: blur(8px);
 }
-
-.bokeh-bg {
-	position: fixed;
-	top: 0;
-	left: 0;
-	width: 100vw;
-	height: 100vh;
-	overflow: hidden; /* Ini yang akan "potong" kalau terkeluar sikit */
-	z-index: -1;
+.pill-icon-btn {
+    width: 44px; height: 44px;
+    display: flex; align-items: center; justify-content: center;
+    background: none; border: none; cursor: pointer;
+    color: var(--text-muted); transition: color 0.2s; flex-shrink: 0;
 }
+.pill-icon-btn:hover { color: var(--purple); }
+.pill-label {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--text-muted);
+    max-width: 0; overflow: hidden; white-space: nowrap;
+    opacity: 0;
+    transition: max-width 0.35s ease, padding 0.35s ease, opacity 0.28s ease;
+}
+.icon-pill:hover .pill-label { max-width: 200px; padding-right: 16px; opacity: 1; }
 
-/* Helper Agent Container */
+/* ── Helper ── */
 .helper-container {
-	position: fixed;
-	bottom: 30px;
-	right: 30px;
-	z-index: 999;
-	display: flex;
-	flex-direction: column;
-	align-items: flex-end;
-	gap: 10px;
+    position: fixed; bottom: 28px; right: 28px;
+    z-index: 110; display: flex; flex-direction: column;
+    align-items: flex-end; gap: 12px;
 }
-
-/* Tooltip Bubble */
 .helper-tooltip {
-	background: #0d061a;
-	border: 2px solid #2d1b4e;
-	color: #a855f7;
-	padding: 10px 16px;
-	border-radius: 15px;
-	font-size: 12px;
-	font-weight: bold;
-	text-transform: uppercase;
-	letter-spacing: 1px;
-	box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-	pointer-events: none;
-	white-space: normal;      /* Bagi text tu boleh "wrap" ke bawah */
-	max-width: 400px;         /* Lebar maksimum, adjust ikut selesa */
-	width: max-content;       /* Kalau text pendek, dia takkan paksa jadi 250px */
-	line-height: 1.4;         /* Jarak baris supaya selesa baca */
-	text-align: center;       /* Text duduk tengah kalau lebih satu baris */
-	position: relative;
-	transition: all 0.3s ease;
+    background: rgba(12,6,24,0.9);
+    border: 1px solid var(--border);
+    color: var(--purple);
+    padding: 9px 16px; border-radius: 14px;
+    font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.12em;
+    pointer-events: none;
+    white-space: normal; max-width: 320px;
+    width: max-content; line-height: 1.5; text-align: center;
+    position: relative; transition: all 0.3s ease;
+    backdrop-filter: blur(8px);
 }
-
-/* Anak panah kecik kat tooltip */
 .helper-tooltip::after {
-	content: '';
-	position: absolute;
-	bottom: -8px;
-	right: 20px;
-	border-left: 8px solid transparent;
-	border-right: 8px solid transparent;
-	border-top: 8px solid #2d1b4e;
+    content: '';
+    position: absolute; bottom: -7px; right: 17px;
+    border-left: 7px solid transparent; border-right: 7px solid transparent;
+    border-top: 7px solid var(--border);
 }
-
-/* Gambar Avatar dengan RGB Border */
 .helper-avatar {
-	width: 70px;
-	height: 70px;
-	border-radius: 50%;
-	position: relative; /* Wajib untuk layer RGB */
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	overflow: hidden; /* Potong gradient jadi bulat */
-	cursor: pointer;
-	box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
-	transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-	border: none; /* Kita buang border asal sebab guna layer RGB */
-	flex-shrink: 0; 
-	margin-right: 0;
+    width: 58px; height: 58px; border-radius: 50%;
+    position: relative; display: flex;
+    justify-content: center; align-items: center;
+    overflow: hidden; cursor: pointer;
+    box-shadow: 0 0 16px rgba(168,85,247,0.28);
+    transition: all 0.3s cubic-bezier(0.175,0.885,0.32,1.275);
+    flex-shrink: 0;
 }
-
-/* Layer Lampu RGB yang berpusing */
 .helper-avatar::before {
-	content: '';
-	position: absolute;
-	width: 180%;
-	height: 180%;
-	background: conic-gradient(
-		#a855f7, /* Purple */
-		#06b6d4, /* Cyan */
-		#22c55e, /* Green */
-		#a855f7  /* Balik ke Purple untuk sambungan smooth */
-	);
-	animation: rotateRGB 3s linear infinite;
-	z-index: 1;
+    content: ''; position: absolute;
+    width: 180%; height: 180%;
+    background: conic-gradient(#a855f7, #06b6d4, #22c55e, #a855f7);
+    animation: rotateRGB 3s linear infinite; z-index: 1;
 }
-
-/* Layer Gambar Avatar (Tutup tengah gradient) */
 .helper-avatar::after {
-	content: '';
-	position: absolute;
-	/* Ketebalan border: beza antara 'inset' dengan saiz container */
-	inset: 3px; 
-	border-radius: 50%;
-	background-image: url('https://cdn.discordapp.com/avatars/217698445186695170/fb81d2ae7710794c2bd52afdabfa5017.png?size=256');
-	background-size: cover;
-	background-color: #0d061a; /* Background fallback */
-	z-index: 2;
+    content: ''; position: absolute; inset: 3px; border-radius: 50%;
+    background-image: url('https://cdn.discordapp.com/avatars/217698445186695170/fb81d2ae7710794c2bd52afdabfa5017.png');
+    background-size: cover; background-color: #0d061a; z-index: 2;
 }
+.helper-avatar:hover { transform: scale(1.08); box-shadow: 0 0 24px rgba(168,85,247,0.55); }
+.helper-avatar:active { transform: scale(0.92); }
 
-/* Animation Pusing */
-@keyframes rotateRGB {
-	from { transform: rotate(0deg); }
-	to { transform: rotate(360deg); }
-}
-
-.helper-avatar:hover {
-	transform: scale(1.1);
-	box-shadow: 0 0 25px rgba(168, 85, 247, 0.7);
-}
-
-.helper-avatar:active {
-	transform: scale(0.9);
-}
-
-.helper-avatar:hover {
-	transform: scale(1.1);
-	box-shadow: 0 0 25px rgba(168, 85, 247, 0.7);
-}
-
-.helper-avatar:active {
-	transform: scale(0.9);
-}
-
-button:focus {
-    outline: none;
-    box-shadow: none; /* Kadang-kadang browser tambah shadow pun ada */
-}
+@keyframes rotateRGB { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+button:focus { outline: none; box-shadow: none; }
